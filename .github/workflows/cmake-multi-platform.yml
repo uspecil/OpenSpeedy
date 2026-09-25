@@ -1,0 +1,75 @@
+#此启动程序工作流适用于在多个平台上运行的CMake项目。如果只需要单个平台，则有不同的启动程序工作流。
+#请参阅： https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
+名称：CMake在多个平台上在...之上：多平台上的CMake
+
+叮当声matrix.build_type
+推：:
+分支机构：[“主”]: [ "主" ]
+pull_request：:
+分支机构：[“主”]: [ "主" ]
+
+作业：:
+建立：:
+运行时间：${{matrix.os}}: ${{matrix.os}}
+
+策略：:
+#将快速失效设置为false以确保所有矩阵组合的反馈都已传递.当您的工作流稳定时，请考虑将此设置更改为true.#将fail-fast设置为false以确保为所有矩阵组合传递反馈。当工作流稳定时，请考虑将此设置更改为true。
+fail-fast:false: 假的
+
+#设置矩阵运行以下3种配置：#设置矩阵以运行以下3种配置：
+#1.<Windows、Release、默认运行程序映像、默认生成器上的最新MSVC编译器工具链>#1.<Windows、Release、默认运行器映像、默认生成器上的最新MSVC编译器工具链>
+#2.<Linux、Release、默认运行器映像、默认生成器上的最新GCC编译器工具链>#2.<Linux，发行版，最新的GCC编译器工具链，默认运行器映像，默认生成器>
+#3.<Linux，Release，最新的Clang编译器工具链，默认跑步者映像，默认生成器>#3.<Linux，发行版，最新的Clang编译器工具链，默认跑步者映像，默认生成器>
+      #
+#要添加更多生成类型(发布、调试、RelWithDebInfo等)，请自定义build_type列表.#要添加更多生成类型(发布、调试、RelWithDebInfo等)，请自定义build_type列表。
+矩阵：:
+OS：[ubuntu-latest，windows-latest]: [Ubuntu-最新,Windows-最新]
+组建类型(_T)：[发布]: [释放]
+C编译器：[gcc，clang，cl](_C): [GCC,叮当声,CL]
+包括：:
+-os:windows-最新os: Windows-最新
+c编写器(_C)：cl: CL
+CPP_compiler: CL: CL
+-os:ubuntu-latestos: Ubuntu-最新
+编译器：GCC(_C): GCC
+CPP_compiler: g++: g++
+-os:ubuntu-latestos: Ubuntu-最新
+C编译器(_C): 叮当声
+CPP_compiler: 叮当声++: 叮当声++
+排除：:
+-os:windows-最新os: Windows-最新
+编译器：GCC(_C): GCC
+-os:windows-最新os: Windows-最新
+编译器：叮当(_C): 叮当声
+-os:ubuntu-latestos: Ubuntu-最新
+c编写器(_C)：cl: CL
+
+步骤：:
+-使用：操作/结帐@v4uses: 操作/结帐@v4
+
+-名称：设置可重用字符串name: 设置可重用字符串
+#将重复的输入字符串(如生成输出目录)转换为步骤输出。这些步骤输出可在整个工作流文件中使用。#将重复的输入字符串(如生成输出目录)转换为步骤输出。这些步骤输出可在整个工作流文件中使用。
+身份标识：字符串: 字符串
+shell:bash: 猛击
+运行：|: |
+回声""build-output-dir=${{github.workspace}}/build">>"$GITHUB_OUTPUT"
+
+-名称：配置CMakename: 配置CMake
+#在'建立'子目录中配置CMake.只有在使用单一组态产生器(例如make)时，才需要'CMMAKE_BUILD_TYPE'.#在'建立'子目录中设定CMake.只有在使用单一组态产生器(例如make)时，才需要'CMake_BUILD_TYPE'。
+#请参阅https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type#请参阅https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+运行：>: >
+CMake-B${{steps.strings.outputs.build-output-dir}}
+-DCMAKE_CXX_COMPILER=${{matrix.cpp_compiler}}
+        -DCMAKE_C_COMPILER=${{matrix.c_compiler}}
+        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+-s${{github.workspace}}
+
+-名称：内部版本名: 建立
+#使用给定的配置生成程序。请注意，需要--配置，因为默认的Windows生成器是多配置生成器(Visual Studio生成器)。#使用给定的配置生成程序。请注意，需要--config，因为默认的Windows生成器是多配置生成器(Visual Studio生成器)。
+运行：cmake--生成${{steps.Strings.Outputs.build-output-dir}}--config${{矩阵。build_type}}: C制造-建造${{steps.strings.outputs.build-output-dir}}--config${{matrix.build_type}}
+
+-名称：试验名称: 测试
+工作目录：${{steps.strings.outputs.build-output-dir}}: ${{steps.strings.outputs.build-output-dir}}
+#执行CMake配置定义的测试.请注意，之所以需要--构建配置，是因为默认的Windows生成器是一个多配置生成器(VisualStudio生成器)。#执行由CMake配置定义的测试.请注意，需要--构建配置，因为默认的Windows生成器是多配置生成器(Visual Studio生成器)。
+#有关更多详细信息，请参见https://cmake.org/cmake/help/latest/manual/ctest.1.html#更多详情请参见https://cmake.org/cmake/help/latest/manual/ctest.1.html
+运行：ctest-build-config${{matrix.build_type}}: ctest-build-config${{matrix.build_type}}
